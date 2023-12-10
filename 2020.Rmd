@@ -1,0 +1,229 @@
+---
+title: "Happiness Report (2020)"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+## 1. Introduction (Exploratory Data Analysis)
+
+### a. Introduction (strategy) 
+1. Assess the general characteristics of the
+data set
+2. Examine descriptive statistics for each
+variable
+3. Visualize variable relations
+4. Where possible, investigate data anomalies
+5. Examine relations between key
+variables
+
+### b. Summarizing numerical data
+```{r}
+library(ggplot2)
+library(caTools)
+library(dplyr)
+library(broom)
+library(ggpubr)
+```
+
+```{r}
+# Importing the data set
+data_2020 <- read.csv('2020_report.csv')
+```
+
+```{r}
+head(data_2020)
+```
+
+```{r}
+str(data_2020)
+```
+
+```{r}
+# summarizing the numerical data
+num_data <- data_2020[, c(2,3,4,5,6,7,8,9)]
+summary(num_data)
+```
+
+### c. Anomalies in numerical data investigation
+**The dots in the boxplots below show the outlier values**
+```{r}
+plot(factor(data_2020$continent), data_2020$happiness_score, xlab='Continent',
+     ylab='Happiness Score', main='Happiness Score by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$gdp_per_capita, xlab='Continent',
+     ylab='GDP per capita', main='GDP by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$social_support, xlab='Continent',
+     ylab='Social Support', main='Social Support by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$health, xlab='Continent',
+     ylab='Health', main='Health by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$freedom, xlab='Continent',
+     ylab='Freedom', main='Freedom by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$government_trust, xlab='Continent',
+     ylab='Government Trust', main='Government Trust by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$generosity, xlab='Continent',
+     ylab='Generosity', main='Generosity by Continent (2020)')
+
+plot(factor(data_2020$continent), data_2020$dystopia_residual, xlab='Continent',
+     ylab='Dystopia Residual', main='Dystopia Residual by Continent (2020)')
+```
+
+Checking the data set for any missing values:
+```{r}
+# checking for any missing values
+any(is.na(data_2020))
+```
+
+### d. Visualization between variables relations
+```{r}
+# plotting variable relations (2020)
+
+library(ggcorrplot)
+
+num_data <- data_2020[, c(2,3,4,5,6,7,8,9)]
+
+ggcorrplot(cor(num_data), hc.order = TRUE, type = "lower", lab = TRUE, lab_size = 3, method="circle", colors = c("blue", "white", "red"), outline.color = "gray", show.legend = TRUE, show.diag = FALSE, title="Correlogram of variables")
+
+plot(data_2020$health, data_2020$happiness_score, xlab='Health', 
+     ylab='Happiness Score', main='Happiness Score by Health (2020)')
+
+plot(data_2020$social_support, data_2020$happiness_score, xlab='Social Support',
+     ylab='Happiness Score', main='Happiness Score by Social Support (2020)')
+
+plot(data_2020$gdp_per_capita, data_2020$happiness_score, xlab='GDP per capita',
+     ylab='Happiness Score', main='Happiness Score by GDP per capita (2020)')
+
+plot(data_2020$dystopia_residual, data_2020$happiness_score, xlab='Dystopia Residual', ylab='Happiness Score', main='Happiness Score by Dystopia Residual (2020)')
+
+plot(data_2020$gdp_per_capita, data_2020$health, xlab='GDP per capita',
+     ylab='Health', main='Health by GDP per capita (2020)')
+
+plot(data_2020$social_support, data_2020$health, xlab='Social Support',
+     ylab='Health', main='Health by Social Support (2020)')
+
+plot(data_2020$freedom, data_2020$government_trust, xlab='Freedom',
+     ylab='Government Trust', main='Government Trust by Freedom (2020)')
+```
+
+
+## 2. Simple Linear Regression Models
+
+### a. Evaluation of variables relations
+For this report, the two variables of interest for linear regression are: **social support** and **happiness score**.
+```{r}
+# Correlation coefficient
+cor(data_2020$social_support, data_2020$happiness_score)
+```
+
+```{r}
+# correlation plot of selected variables
+library(ggcorrplot)
+
+lin <- data_2020[,c(2,4)]
+ggcorrplot(cor(lin), hc.order = TRUE, type = "lower", lab = TRUE, lab_size = 3, method="circle", colors = c("blue", "white", "red"), outline.color = "gray", show.legend = TRUE, show.diag = FALSE, title="Correlogram of variables")
+```
+It can be noted above that there is a strong correlation between social support and the happiness score.
+
+### b. Model Definition
+
+```{r}
+# splitting the data
+split_2020 <- sample.split(data_2020$happiness_score, SplitRatio = 0.8)
+training_set <- subset(data_2020, split_2020 == TRUE)
+test_set <- subset(data_2020, split_2020 == FALSE)
+```
+
+```{r}
+# fitting the data into linear regression model
+lm_2020 <- lm(happiness_score ~ social_support, data=training_set)
+```
+
+```{r}
+# printing out the intercept and slope of the linear regression model
+coef(lm_2020)
+
+# summary of the linear regression model
+summary(lm_2020)
+```
+
+### c. Statistical Inference
+A correlation test is conducted below to test the relationship between the variables: **social_support** and **happiness_score**
+```{r}
+# correlation test using Pearson correlation test
+cor.test(data_2020$social_support, data_2020$happiness_score, method="pearson")
+```
+The results show that the p-value is less than the significance level (0.05), so the null hypothesis (true correlation is equal to 0) is rejected. The alternative hypothesis (true correlation is not equal to 0) is not rejected, so this indicates that the two variables are significantly correlated. This is backed by the correlation coefficient which is approximately 0.77, which signifies a strong positive correlation between social_support and happiness_score.
+
+### d. Prediction
+```{r}
+# using the simple linear regression to predict the happiness score using the test set
+ypred <- predict(lm_2020, newdata = test_set)
+
+ypred
+```
+
+```{r}
+# linear regression graph (whole data set)
+happiness_graph <- ggplot(data_2020, aes(x=social_support, y=happiness_score)) + geom_point()
+
+happiness_graph <- happiness_graph + geom_smooth(method="lm", col="black")
+
+happiness_graph <- happiness_graph + stat_regline_equation()
+
+happiness_graph <- happiness_graph + theme_bw() + labs(
+  title="Happiness Score by Social Support (2020)",
+  x = "Social Support",
+  y = "Happiness Score")
+
+happiness_graph
+```
+
+## 3. Multiple Linear Regression
+### a. Evaluation of variables
+For this report, the variables of interest for multiple linear regression are: **GDP per capita**, **social support**, **health**, and **happiness score**.
+```{r}
+# correlation matrix of selected variables
+num_data1 <- data_2020[, c(2, 3, 4, 5, 6)]
+cor(num_data1)
+```
+
+```{r}
+# correlation plot of selected variables
+ggcorrplot(cor(num_data1), hc.order = TRUE, type = "lower", lab = TRUE, lab_size = 3, method="circle", colors = c("blue", "white", "red"), outline.color = "gray", show.legend = TRUE, show.diag = FALSE, title="Correlogram of variables")
+```
+Scatter plots showing relationship between the selected variables
+```{r}
+par(mfrow=c(2,2))
+plot(data_2020$health, data_2020$happiness_score, xlab='Health', 
+     ylab='Happiness Score', main='Happiness Score by Health (2020)')
+
+plot(data_2020$social_support, data_2020$happiness_score, xlab='Social Support',
+     ylab='Happiness Score', main='Happiness Score by Social Support (2020)')
+
+plot(data_2020$gdp_per_capita, data_2020$happiness_score, xlab='GDP per capita',
+     ylab='Happiness Score', main='Happiness Score by GDP per capita (2020)')
+```
+
+### b. Summary form Evaluation of Variables
+```{r}
+# fitting the data into the multiple linear regression model
+multiple_lm_2020 <- lm(happiness_score ~ gdp_per_capita + social_support + health + freedom, data = training_set)
+```
+
+```{r}
+# summary of the multiple linear regression model
+summary(multiple_lm_2020)
+```
+
+```{r}
+# using the multiple linear regression to predict the happiness score using the test set
+ypred <- predict(multiple_lm_2020, newdata = test_set)
+
+ypred
+```
